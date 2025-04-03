@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:festival_diary_app/constants/baseurl_constant.dart';
 import 'package:festival_diary_app/models/user.dart';
 
 class UserApi {
@@ -20,7 +21,7 @@ class UserApi {
       });
 
       final responseData = await dio.post(
-        'http://172.17.34.11:4040/user/',
+        '$baseurl/user/',
         data: formData,
         options: Options(
           headers: {
@@ -37,6 +38,23 @@ class UserApi {
     } catch (err) {
       print('ERROR: ${err.toString()}');
       return false;
+    }
+  }
+
+  Future<User> checkUser(User user) async {
+    try {
+      final responseData = await dio.get(
+        '$baseurl/user/${user.userName}/${user.userPassword}/',
+      );
+
+      if (responseData.statusCode == 200) {
+        return User.fromJson(responseData.data['info']);
+      } else {
+        return User();
+      }
+    } catch (err) {
+      print('Exception: ${err}');
+      return User();
     }
   }
 }

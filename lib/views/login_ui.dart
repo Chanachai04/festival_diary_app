@@ -1,4 +1,7 @@
 import 'package:festival_diary_app/constants/color_constant.dart';
+import 'package:festival_diary_app/models/user.dart';
+import 'package:festival_diary_app/services/user_api.dart';
+import 'package:festival_diary_app/views/home_ui.dart';
 import 'package:festival_diary_app/views/register_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +13,18 @@ class LoginUI extends StatefulWidget {
 }
 
 class _LoginUIState extends State<LoginUI> {
+  TextEditingController userNameCtrl = TextEditingController();
+  TextEditingController userPasswordCtrl = TextEditingController();
+
+  bool isShowUserPassword = true;
+  showWarningSnackBar(context, message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+      duration: Duration(seconds: 2),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,6 +63,7 @@ class _LoginUIState extends State<LoginUI> {
                     height: 10,
                   ),
                   TextField(
+                    controller: userNameCtrl,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person),
@@ -64,13 +80,20 @@ class _LoginUIState extends State<LoginUI> {
                     height: 10,
                   ),
                   TextField(
-                    obscureText: true,
+                    obscureText: isShowUserPassword,
+                    controller: userPasswordCtrl,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock),
                       suffixIcon: IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.visibility_off),
+                        onPressed: () {
+                          setState(() {
+                            isShowUserPassword = !isShowUserPassword;
+                          });
+                        },
+                        icon: Icon(isShowUserPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
                       ),
                     ),
                   ),
@@ -78,7 +101,31 @@ class _LoginUIState extends State<LoginUI> {
                     height: 20,
                   ),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      if (userNameCtrl.text.isEmpty) {
+                        showWarningSnackBar(context, "กรุณากรอกชื่อผู้ใช้");
+                      } else if (userPasswordCtrl.text.isEmpty) {
+                        showWarningSnackBar(context, "กรุณากรอกรหัสผ่าน");
+                      } else {
+                        User user = User(
+                          userName: userNameCtrl.text,
+                          userPassword: userPasswordCtrl.text,
+                        );
+
+                        user = await UserApi().checkUser(user);
+                        if (user.userId != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomeUI(),
+                            ),
+                          );
+                        } else {
+                          showWarningSnackBar(
+                              context, 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                        }
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Color(mainColor),
                         fixedSize: Size(MediaQuery.of(context).size.width, 50),

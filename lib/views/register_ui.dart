@@ -117,7 +117,7 @@ class _RegisterUIState extends State<RegisterUI> {
                     controller: userFullNameCtrl,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
+                      prefixIcon: Icon(Icons.featured_play_list),
                     ),
                   ),
                   SizedBox(
