@@ -57,4 +57,38 @@ class UserApi {
       return User();
     }
   }
+
+  Future<User> updateUser(User user, File? userFile) async {
+    try {
+      final formData = FormData.fromMap({
+        'userFullname': user.userFullname,
+        'userName': user.userName,
+        'userPassword': user.userPassword,
+        if (userFile != null)
+          'userImage': await MultipartFile.fromFile(userFile.path,
+              filename: userFile.path.split('/').last,
+              contentType:
+                  DioMediaType('image', userFile.path.split('.').last)),
+      });
+
+      final responseData = await dio.put(
+        '$baseurl/user/${user.userId}',
+        data: formData,
+        options: Options(
+          headers: {
+            'content-type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (responseData.statusCode == 200) {
+        return User.fromJson(responseData.data["info"]);
+      } else {
+        return User();
+      }
+    } catch (err) {
+      print('ERROR: ${err.toString()}');
+      return User();
+    }
+  }
 }
