@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:festival_diary_app/constants/color_constant.dart';
+import 'package:festival_diary_app/models/fest.dart';
+import 'package:festival_diary_app/services/fest_api.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -13,16 +15,37 @@ class AddFestUI extends StatefulWidget {
 }
 
 class _AddFestUIState extends State<AddFestUI> {
-  File? userFile;
+  File? festFile;
 
+  TextEditingController festNameCTRL = TextEditingController();
+  TextEditingController festDetailCTRL = TextEditingController();
+  TextEditingController festStateCTRL = TextEditingController();
+  TextEditingController festCostCTRL = TextEditingController();
+  TextEditingController festNumDayCTRL = TextEditingController();
   Future<void> openCamera() async {
     final image = await ImagePicker().pickImage(source: ImageSource.camera);
 
     if (image == null) return;
 
     setState(() {
-      userFile = File(image.path);
+      festFile = File(image.path);
     });
+  }
+
+  showWarningSnackBar(context, message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+      duration: Duration(seconds: 2),
+    ));
+  }
+
+  showCompleteSnackBar(context, message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.green,
+      duration: Duration(seconds: 2),
+    ));
   }
 
   @override
@@ -55,18 +78,11 @@ class _AddFestUIState extends State<AddFestUI> {
                   SizedBox(
                     height: 20,
                   ),
-                  Text(
-                    "เพิ่มข้อมูล Festival",
-                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
                   InkWell(
                     onTap: () async {
                       await openCamera();
                     },
-                    child: userFile == null
+                    child: festFile == null
                         ? Icon(
                             Icons.travel_explore,
                             size: 100,
@@ -75,7 +91,7 @@ class _AddFestUIState extends State<AddFestUI> {
                         : ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: Image.file(
-                              userFile!,
+                              festFile!,
                               width: 150,
                               height: 150,
                               fit: BoxFit.cover,
@@ -93,6 +109,7 @@ class _AddFestUIState extends State<AddFestUI> {
                     height: 10,
                   ),
                   TextField(
+                    controller: festNameCTRL,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.festival),
@@ -109,9 +126,10 @@ class _AddFestUIState extends State<AddFestUI> {
                     height: 10,
                   ),
                   TextField(
+                    controller: festDetailCTRL,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.festival),
+                      prefixIcon: Icon(Icons.details_outlined),
                     ),
                   ),
                   SizedBox(
@@ -125,6 +143,7 @@ class _AddFestUIState extends State<AddFestUI> {
                     height: 10,
                   ),
                   TextField(
+                    controller: festStateCTRL,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock_clock),
@@ -141,19 +160,67 @@ class _AddFestUIState extends State<AddFestUI> {
                     height: 10,
                   ),
                   TextField(
+                    controller: festCostCTRL,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.festival),
+                      prefixIcon: Icon(Icons.money_off),
                     ),
                   ),
                   SizedBox(
                     height: 10,
                   ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text("ไปงาน Festival กี่วัน"),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  TextField(
+                    controller: festNumDayCTRL,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.timelapse),
+                    ),
+                  ),
                   SizedBox(
                     height: 20,
                   ),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      if (festNameCTRL.text.trim().isEmpty) {
+                        showWarningSnackBar(context, "กรุณากรอกชื่องาน Fest");
+                      } else if (festDetailCTRL.text.trim().isEmpty) {
+                        showWarningSnackBar(
+                            context, "กรุณากรอกรายละเอียด FEstival");
+                      } else if (festStateCTRL.text.trim().isEmpty) {
+                        showWarningSnackBar(
+                            context, "กรุณากรอกสถานที่จัดงาน Festival");
+                      } else if (festCostCTRL.text.trim().isEmpty) {
+                        showWarningSnackBar(
+                            context, "กรุณากรอกค่าใช้จ่ายงาน Festival");
+                      } else if (festNumDayCTRL.text.trim().isEmpty) {
+                        showWarningSnackBar(
+                            context, "กรุณากรอกไปงาน Festival กี่วัน");
+                      } else {
+                        Fest fest = Fest(
+                          festName: festNameCTRL.text.trim(),
+                          festDetail: festDetailCTRL.text.trim(),
+                          festState: festStateCTRL.text.trim(),
+                          festCost: double.parse(festCostCTRL.text.trim()),
+                          userId: widget.userId,
+                          festNumDay: int.parse(festNumDayCTRL.text.trim()),
+                        );
+                        if (await FestApi().insertFest(fest, festFile)) {
+                          showCompleteSnackBar(
+                              context, "บันทึกงาน Festivalสำเร็จ");
+                          Navigator.pop(context);
+                        } else {
+                          showCompleteSnackBar(
+                              context, "บันทึกงาน Festivalไม่สําเร็จ");
+                        }
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Color(mainColor),
                         fixedSize: Size(MediaQuery.of(context).size.width, 50),
